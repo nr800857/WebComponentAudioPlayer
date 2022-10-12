@@ -17,28 +17,28 @@ class audioPlayerComponent extends HTMLElement {
         this.name = this.getAttribute('name');
         this.playList = [
             {
-              url: "",
+              url: "https://nr800857.github.io/WebComponentAudioPlayer/audioPlayerComponents/songs/cardigan.mp3",
               author: "Taylor Swift",
               title: "Cardigan",
+              index: 0,
+            },
+            {
+              url: "https://nr800857.github.io/WebComponentAudioPlayer/audioPlayerComponents/songs/everything_i_wanted.mp3",
+              author: "Billie Eilish",
+              title: "everything i wanted",
               index: 1,
             },
             {
-              url: "",
-              author: "Billie Eilish",
-              title: "everything i wanted",
+              url: "https://nr800857.github.io/WebComponentAudioPlayer/audioPlayerComponents/songs/mariners_apartment_complex.mp3",
+              author: "Lana Del Rey",
+              title: "Mariners Apartment Complex",
               index: 2,
             },
             {
-              url: "",
-              author: "Lana Del Rey",
-              title: "Mariners Apartment Complex",
-              index: 3,
-            },
-            {
-              url: "",
+              url: "https://nr800857.github.io/WebComponentAudioPlayer/audioPlayerComponents/songs/pov.mp3",
               author: "Ariana Grande",
               title: "pov",
-              index: 4,
+              index: 3,
             }
           ];
           this.currentSong = this.playList[0];
@@ -54,7 +54,7 @@ class audioPlayerComponent extends HTMLElement {
                     box-shadow: 0 0 50px black;
                     text-align: center;
                     width: 400px;
-                    height: 80%;
+                    height: auto;
                     border-radius: 10px;
                     color: white;
                     font-family: 'Helvetica', sans-serif;
@@ -168,7 +168,7 @@ class audioPlayerComponent extends HTMLElement {
             </div>
 
 
-            <my-egaliseur id="equalizer"></my-egaliseur>
+            <my-egaliseur id="equalizer" class="hidden"></my-egaliseur>
 
             </div>
         `;
@@ -209,7 +209,19 @@ class audioPlayerComponent extends HTMLElement {
         this.currentSong = this.playList[songIndex];
         this.player.src = this.currentSong.url;
         this.updateTitle();
-        this.player.play();
+        if(this.isPlaying)
+            this.player.play();
+    }
+
+    updateSongDuration() {
+        let seconds = this.player.duration;
+        this.shadowRoot.querySelector('#time').max = seconds;
+
+        let minutes = Math.floor(seconds / 60);
+        minutes = (minutes >= 10) ? minutes : "0" + minutes;
+        seconds = Math.floor(seconds % 60);
+        seconds = (seconds >= 10) ? seconds : "0" + seconds;
+        this.shadowRoot.querySelector('#duration').innerHTML = minutes + ":" + seconds;
     }
 
     fixRelativeURLs() {
@@ -219,7 +231,6 @@ class audioPlayerComponent extends HTMLElement {
         for (const knob of knobs) {
           const src = knob.src;
           knob.src =  baseURL  + src;
-          console.log("new value : " + knob.src);
         }
 
         const sliders = this.shadowRoot.querySelectorAll('webaudio-slider');
@@ -227,7 +238,6 @@ class audioPlayerComponent extends HTMLElement {
           const src = slider.src;
           slider.src =  baseURL  + src;
           slider.knobsrc = baseURL  + slider.knobsrc;
-          console.log(slider.src)
         }
 
       }
@@ -254,17 +264,19 @@ class audioPlayerComponent extends HTMLElement {
         });
 
         this.shadowRoot.querySelector("#next").addEventListener('click', () => {
-            if(this.currentSongIndex == this.playList.length) {
+            console.log("BBBBB")
+            if(this.currentSong.index == this.playList.length-1) {
                 this.updateSong(0);
             }
             else {
                 this.updateSong(this.currentSong.index + 1);
             }
+            this.updateSongDuration();
         });
 
         this.shadowRoot.querySelector("#back").addEventListener('click', () => {
-            if(this.currentSongIndex == 0) {
-                this.updateSong(this.playList.length);
+            if(this.currentSong.index == 0) {
+                this.updateSong(this.playList.length-1);
             }
             else {
                 this.updateSong(this.currentSong.index - 1);
@@ -274,13 +286,13 @@ class audioPlayerComponent extends HTMLElement {
         this.shadowRoot.querySelector("#expand").addEventListener('click', () => {
             if(this.equalizerExpanded == true) {
                 this.shadowRoot.querySelector("#expandIcon").src = "./audioPlayerComponents/assets/icons/expand.png";
-                this.shadowRoot.querySelector("#egaliseur").classList.add("hidden");
+                this.shadowRoot.querySelector("#equalizer").classList.add("hidden");
                 this.equalizerExpanded = false;
             }
 
             else {
                 this.shadowRoot.querySelector("#expandIcon").src = "./audioPlayerComponents/assets/icons/collapse.png";
-                this.shadowRoot.querySelector("#egaliseur").classList.remove("hidden");
+                this.shadowRoot.querySelector("#equalizer").classList.remove("hidden");
                 this.equalizerExpanded = true;
             }
         });
@@ -306,17 +318,9 @@ class audioPlayerComponent extends HTMLElement {
 
         });
 
-        this.player.addEventListener('play', () => {
-            let seconds = this.player.duration;
-            this.shadowRoot.querySelector('#time').max = seconds;
-
-            let minutes = Math.floor(seconds / 60);
-            minutes = (minutes >= 10) ? minutes : "0" + minutes;
-            seconds = Math.floor(seconds % 60);
-            seconds = (seconds >= 10) ? seconds : "0" + seconds;
-            this.shadowRoot.querySelector('#duration').innerHTML = minutes + ":" + seconds;
-            
-        });
+        this.player.onloadedmetadata = () => {
+            this.updateSongDuration();
+        }
 
         this.shadowRoot.querySelector('#time').addEventListener('input', () => {
             this.player.currentTime = this.shadowRoot.querySelector('#time').value;
